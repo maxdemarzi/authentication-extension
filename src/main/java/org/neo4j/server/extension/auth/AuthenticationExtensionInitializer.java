@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2002-2014 "Neo Technology,"
+ * Copyright (c) 2002-2015 "Neo Technology,"
  * Network Engine for Objects in Lund AB [http://neotechnology.com]
  *
  * This file is part of Neo4j.
@@ -66,11 +66,11 @@ public class AuthenticationExtensionInitializer implements SPIPluginLifecycle {
 
         webServer = getWebServer(neoServer);
         final Configurator configurator = neoServer.getConfigurator();
-        final Configuration configuration = neoServer.getConfiguration();
-
-        final String masterCredendials = configuration.getString("org.neo4j.server.credentials");
+        Configuration configuration = neoServer.getConfiguration();
+        String masterCredendials = configuration.getString("org.neo4j.server.credentials");
         if (masterCredendials == null) {
-            throw new RuntimeException("missing master-credentials in neo4j-server.properties");
+            masterCredendials = "neo4j:master";
+            //throw new RuntimeException("missing master-credentials in neo4j-server.properties");
         }
 
         final SingleUserAuthenticationService adminAuth = new SingleUserAuthenticationService(masterCredendials);

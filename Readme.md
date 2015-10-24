@@ -6,6 +6,7 @@ The username:password combination are the admin credentials, please change as ap
     org.neo4j.server.credentials=username:password
     org.neo4j.server.thirdparty_jaxrs_classes=org.neo4j.server.extension.auth=/auth
 
+Default credentials are neo4j:master .
 Manage the credentials by sending POST requests to the `http://server:port/auth` endpoint.
 
 ## List existing users

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2002-2014 "Neo Technology,"
+ * Copyright (c) 2002-2015 "Neo Technology,"
  * Network Engine for Objects in Lund AB [http://neotechnology.com]
  *
  * This file is part of Neo4j.
@@ -22,7 +22,6 @@ package org.neo4j.server.extension.auth;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.kernel.GraphDatabaseAPI;
-import org.neo4j.kernel.impl.core.GraphPropertiesImpl;
 import org.neo4j.kernel.impl.core.NodeManager;
 
 import java.util.HashMap;
@@ -68,7 +67,7 @@ public class MultipleAuthenticationService implements AuthenticationService {
 
     private PropertyContainer getGraphProperties() {
             NodeManager nodeManager = graph.getDependencyResolver().resolveDependency(NodeManager.class);
-            return nodeManager.getGraphProperties();
+            return nodeManager.newGraphProperties();
     }
 
     private String getUserKey(String cred) {

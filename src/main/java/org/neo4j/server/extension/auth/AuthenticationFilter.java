@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2002-2014 "Neo Technology,"
+ * Copyright (c) 2002-2015 "Neo Technology,"
  * Network Engine for Objects in Lund AB [http://neotechnology.com]
  *
  * This file is part of Neo4j.
@@ -52,9 +52,12 @@ public class AuthenticationFilter implements Filter {
         final HttpServletResponse response = (HttpServletResponse) res;
 
         final String header = request.getHeader("Authorization");
-
-        if (checkAuth(((HttpServletRequest) req).getMethod(), header)) {
-            chain.doFilter(request, response);
+        if (header != null) {
+            if (checkAuth(((HttpServletRequest) req).getMethod(), header)) {
+                chain.doFilter(request, response);
+            } else {
+                sendAuthHeader(response);
+            }
         } else {
             sendAuthHeader(response);
         }

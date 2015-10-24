@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2002-2014 "Neo Technology,"
+ * Copyright (c) 2002-2015 "Neo Technology,"
  * Network Engine for Objects in Lund AB [http://neotechnology.com]
  *
  * This file is part of Neo4j.
@@ -21,11 +21,12 @@ package org.neo4j.server.extension.auth;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.kernel.impl.core.GraphProperties;
+import org.neo4j.kernel.GraphDatabaseAPI;
 import org.neo4j.kernel.impl.core.NodeManager;
-import org.neo4j.test.ImpermanentGraphDatabase;
+import org.neo4j.test.TestGraphDatabaseFactory;
 
 import static org.junit.Assert.assertEquals;
 import static org.neo4j.helpers.collection.MapUtil.genericMap;
@@ -39,18 +40,18 @@ import static org.neo4j.server.extension.auth.MultipleAuthenticationService.Perm
 public class TestAuthenticationService {
 
     private MultipleAuthenticationService service;
-    private ImpermanentGraphDatabase graphDatabase;
+    private GraphDatabaseService graphDatabase;
 
     @Before public void setup() {
-        graphDatabase = new ImpermanentGraphDatabase();
-        service = new MultipleAuthenticationService(graphDatabase);
+        graphDatabase = new TestGraphDatabaseFactory().newImpermanentDatabase();
+        service = new MultipleAuthenticationService((GraphDatabaseAPI)graphDatabase);
     }
 
     @Test public void testUserAddRemove() {
         service.setPermissionForUser("user1", RO);
 
-        NodeManager nodeManager = graphDatabase.getDependencyResolver().resolveDependency(NodeManager.class);
-        PropertyContainer properties = nodeManager.getGraphProperties();
+        NodeManager nodeManager = ((GraphDatabaseAPI)graphDatabase).getDependencyResolver().resolveDependency(NodeManager.class);
+        PropertyContainer properties = nodeManager.newGraphProperties();
         Transaction transaction = graphDatabase.beginTx();
         properties.setProperty("any other property", "should be ignored");
         transaction.success();
