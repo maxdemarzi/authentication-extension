@@ -96,6 +96,12 @@ public class TestAuthentification {
         response = HTTP.withHeaders(HttpHeaders.AUTHORIZATION, challengeResponse("test", "pass"))
                 .POST(neo4j.httpURI().resolve("/db/data/node").toString());
         assertEquals(401, response.status());
+        response = HTTP.withHeaders(HttpHeaders.AUTHORIZATION, challengeResponse("test", "pass"))
+                .POST(neo4j.httpURI().resolve("/db/data/transaction/commit").toString(), RO_CYPHER);
+        assertEquals(200, response.status());
+        response = HTTP.withHeaders(HttpHeaders.AUTHORIZATION, challengeResponse("test", "pass"))
+                .POST(neo4j.httpURI().resolve("/db/data/transaction/commit").toString(), RW_CYPHER);
+        assertEquals(401, response.status());
         removeUser("test", "pass");
         response = HTTP.withHeaders(HttpHeaders.AUTHORIZATION, challengeResponse("test", "pass"))
                 .POST(neo4j.httpURI().resolve("/db/data/node").toString());
@@ -118,6 +124,12 @@ public class TestAuthentification {
         response = HTTP.withHeaders(HttpHeaders.AUTHORIZATION, challengeResponse("test", "pass"))
                 .POST(neo4j.httpURI().resolve("/db/data/node").toString());
         assertEquals(201, response.status());
+        response = HTTP.withHeaders(HttpHeaders.AUTHORIZATION, challengeResponse("test", "pass"))
+                .POST(neo4j.httpURI().resolve("/db/data/transaction/commit").toString(), RO_CYPHER);
+        assertEquals(200, response.status());
+        response = HTTP.withHeaders(HttpHeaders.AUTHORIZATION, challengeResponse("test", "pass"))
+                .POST(neo4j.httpURI().resolve("/db/data/transaction/commit").toString(), RW_CYPHER);
+        assertEquals(200, response.status());
         removeUser("test", "pass");
         response = HTTP.withHeaders(HttpHeaders.AUTHORIZATION, challengeResponse("test", "pass"))
                 .POST(neo4j.httpURI().resolve("/db/data/node").toString());
@@ -126,7 +138,6 @@ public class TestAuthentification {
                 .GET(neo4j.httpURI().resolve("/db/data").toString());
         assertEquals(401, response.status());
     }
-
 
     private String addUser(final String user, String pass, boolean rw) {
         MultivaluedMap<String, String> formData = new MultivaluedMapImpl();
@@ -151,5 +162,8 @@ public class TestAuthentification {
     {
         return UTF8.decode(Base64.encode(value));
     }
+
+    private HTTP.RawPayload RO_CYPHER = HTTP.RawPayload.rawPayload("{\"statements\" : [{\"statement\" : \"MATCH (n) RETURN (n)\"}]}");
+    private HTTP.RawPayload RW_CYPHER = HTTP.RawPayload.rawPayload("{\"statements\" : [{\"statement\" : \"CREATE (n) RETURN (n)\"}]}");
 
 }

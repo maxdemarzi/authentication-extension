@@ -23,8 +23,13 @@ import sun.misc.BASE64Decoder;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
  * @author tbaum
@@ -33,6 +38,14 @@ import java.io.IOException;
 public class AuthenticationFilter implements Filter {
     private final AuthenticationService[] authenticationService;
     private final String realmName;
+    private static final Logger logger = Logger.getLogger(AuthenticationFilter.class.getName());
+
+    private static final ArrayList<String> CYPHER_WRITE_KEYWORDS = new ArrayList<String>() {{
+        add("create "); add ("set "); add("merge "); add("delete "); add("remove "); add("drop ");}};
+
+    private static final ArrayList<String> CYPHER_API_ENDPOINTS = new ArrayList<String>() {{
+        add("/db/data/transaction"); add("/db/data/cypher"); add("/db/data/batch"); }};
+
 
     public AuthenticationFilter(final String realmName, final AuthenticationService... authenticationService) {
         this.authenticationService = authenticationService;
@@ -51,16 +64,51 @@ public class AuthenticationFilter implements Filter {
         final HttpServletRequest request = (HttpServletRequest) req;
         final HttpServletResponse response = (HttpServletResponse) res;
 
+        ServletInputStream inputStream = request.getInputStream();
+        byte[] reqBytes = new byte[Math.max(request.getContentLength(), 0)];
+
+        inputStream.read(reqBytes);
+        HttpServletRequestWrapper wrappedRequest = getWrappedRequest(request, reqBytes);
+        final String body = new String(reqBytes, StandardCharsets.UTF_8);
+
         final String header = request.getHeader("Authorization");
+        final String method = hijackMethod(request, body.toLowerCase());
         if (header != null) {
-            if (checkAuth(((HttpServletRequest) req).getMethod(), header)) {
-                chain.doFilter(request, response);
+            if (checkAuth(method, header)) {
+                chain.doFilter(wrappedRequest, response);
             } else {
                 sendAuthHeader(response);
             }
         } else {
             sendAuthHeader(response);
         }
+    }
+
+    private String hijackMethod(HttpServletRequest req, String body) {
+        String method = req.getMethod();
+        if("POST".equalsIgnoreCase(method) && isCypherEndpoint(req.getRequestURI()) && isNotCypherWrites(body)) {
+            return "GET";
+        }
+
+        return method;
+    }
+    
+    private boolean isNotCypherWrites(String body) {
+        for (String keyword : CYPHER_WRITE_KEYWORDS) {
+            if (body.contains(keyword)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isCypherEndpoint(String path) {
+        for (String endpoint : CYPHER_API_ENDPOINTS) {
+            if (path.toLowerCase().startsWith(endpoint)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void destroy() {
@@ -84,5 +132,40 @@ public class AuthenticationFilter implements Filter {
     private void sendAuthHeader(HttpServletResponse response) throws IOException {
         response.setHeader("WWW-Authenticate", "Basic realm=\"" + realmName + "\"");
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+    }
+
+
+    private HttpServletRequestWrapper getWrappedRequest(HttpServletRequest httpRequest, final byte[] reqBytes)
+            throws IOException {
+
+        final ByteArrayInputStream byteInput = new ByteArrayInputStream(reqBytes);
+        return new HttpServletRequestWrapper(httpRequest) {
+
+            @Override
+            public ServletInputStream getInputStream() throws IOException {
+                ServletInputStream sis = new ServletInputStream() {
+
+                    @Override
+                    public int read() throws IOException {
+                        return byteInput.read();
+                    }
+                    @Override
+                    public boolean isFinished() {
+                        throw new RuntimeException("Not implemented");
+                    }
+
+                    @Override
+                    public boolean isReady() {
+                        throw new RuntimeException("Not implemented");
+                    }
+
+                    @Override
+                    public void setReadListener(ReadListener readListener) {
+                        throw new RuntimeException("Not implemented");
+                    }
+                };
+                return sis;
+            }
+        };
     }
 }
