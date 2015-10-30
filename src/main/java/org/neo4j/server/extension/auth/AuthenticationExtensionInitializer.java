@@ -21,6 +21,7 @@ package org.neo4j.server.extension.auth;
 
 import org.apache.commons.configuration.Configuration;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.config.Setting;
 import org.neo4j.kernel.GraphDatabaseAPI;
 import org.neo4j.server.AbstractNeoServer;
 import org.neo4j.server.NeoServer;
@@ -37,6 +38,8 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static org.neo4j.server.extension.auth.TypedInjectable.injectable;
+import static org.neo4j.helpers.Settings.STRING;
+import static org.neo4j.helpers.Settings.setting;
 
 public class AuthenticationExtensionInitializer implements SPIPluginLifecycle {
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationExtensionInitializer.class);
@@ -66,12 +69,11 @@ public class AuthenticationExtensionInitializer implements SPIPluginLifecycle {
 
         webServer = getWebServer(neoServer);
         final Configurator configurator = neoServer.getConfigurator();
-        Configuration configuration = neoServer.getConfiguration();
-        String masterCredendials = configuration.getString("org.neo4j.server.credentials");
-        if (masterCredendials == null) {
-            masterCredendials = "neo4j:master";
-            //throw new RuntimeException("missing master-credentials in neo4j-server.properties");
-        }
+
+        Setting<String> master_credentials =
+                setting("org.neo4j.server.credentials", STRING, "neo4j:master");
+
+        String masterCredendials = neoServer.getConfig().get(master_credentials);
 
         final SingleUserAuthenticationService adminAuth = new SingleUserAuthenticationService(masterCredendials);
         Database database = neoServer.getDatabase();
