@@ -10,8 +10,8 @@
         <bundle.namespace>org.neo4j.server.authentication-extension</bundle.namespace>
 
         <!-- Jar Versions -->
-        <neo4j.version>2.2.6</neo4j.version>
-        <jersey.version>1.9</jersey.version>
+        <neo4j.version>2.3.0</neo4j.version>
+        <jersey.version>1.19</jersey.version>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>
